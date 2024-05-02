@@ -119,7 +119,7 @@ pub async fn get_customer_nwc(
     .await
     {
         Err(e) => {
-            error!("customer nwc not found: {}", e);
+            info!("customer nwc not found: {}", e);
             let error_message = NwcResponseErrorMessage {
                 status: "failed".to_string(),
                 error: e.to_string(),

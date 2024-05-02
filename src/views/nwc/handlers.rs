@@ -24,38 +24,20 @@ pub struct NwcRequest {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct NwcResponseErrorMessage {
-    error: NwcResponsesErrors,
-    message: String,
+    status: String,
+    error: String,
 }
 
 impl fmt::Display for NwcResponseErrorMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{{\"error\": \"{}\", \"message\": \"{}\"}}",
-            self.error, self.message
+            "{{\"status\": \"{}\",\"error\": \"{}\"}}",
+            self.status, self.error
         )
     }
 }
 impl Error for NwcResponseErrorMessage {}
-
-#[allow(non_camel_case_types)]
-#[derive(Clone, Debug, Deserialize, Serialize)]
-enum NwcResponsesErrors {
-    database,
-    payload,
-    query,
-}
-
-impl fmt::Display for NwcResponsesErrors {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            NwcResponsesErrors::database => write!(f, "Database error"),
-            NwcResponsesErrors::payload => write!(f, "Payload error"),
-            NwcResponsesErrors::query => write!(f, "Query error"),
-        }
-    }
-}
 
 pub async fn create_customer_nwc(
     State(shared_state): State<Arc<AppState>>,
@@ -95,14 +77,20 @@ pub async fn create_customer_nwc(
             error!("error creating nwc: {}", e);
             // The return is required otherwise the HTTP response code will be 200
             let error_message = NwcResponseErrorMessage {
-                message: e.to_string(),
-                error: NwcResponsesErrors::database,
+                status: "failed".to_string(),
+                error: e.to_string(),
             };
             return (StatusCode::BAD_REQUEST, axum::response::Json(error_message)).into_response();
         },
         Ok(_) => {
             info!("CustomerNwc generated successfully");
-            return axum::response::Json(customer_nwc_response).into_response();
+            let response = serde_json::json!({
+                "status": "success",
+                "data": serde_json::json!({
+                    "nwc": customer_nwc_response
+                })
+            });
+            return axum::response::Json(response).into_response();
 
             // waiting to add redis
             // match redis_conn.set::<String, String, String>(customer.email.clone(), uuid).await {
@@ -133,13 +121,19 @@ pub async fn get_customer_nwc(
         Err(e) => {
             error!("customer nwc not found: {}", e);
             let error_message = NwcResponseErrorMessage {
-                message: e.to_string(),
-                error: NwcResponsesErrors::query,
+                status: "failed".to_string(),
+                error: e.to_string(),
             };
             return (StatusCode::NOT_FOUND, axum::response::Json(error_message)).into_response();
         }
         Ok(nwc) => {
-            return axum::response::Json::<CustomerNwc>(nwc).into_response();
+            let response = serde_json::json!({
+                "status": "success",
+                "data": serde_json::json!({
+                    "nwc": nwc
+                })
+            });
+            return axum::response::Json(response).into_response();
         }
     };
 }

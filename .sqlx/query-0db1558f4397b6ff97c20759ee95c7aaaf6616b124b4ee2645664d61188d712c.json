@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO customer_nwc (uuid, server_key, user_key, uri, app_service, budget) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "uuid",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "server_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "uri",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "app_service",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "budget",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0db1558f4397b6ff97c20759ee95c7aaaf6616b124b4ee2645664d61188d712c"
+}

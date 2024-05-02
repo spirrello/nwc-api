@@ -1,0 +1,36 @@
+version: "3.7"
+services:
+  postgres:
+    container_name: 'postgres'
+    image: 'postgres:15.2'
+    ports:
+      - '5433:5432'
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    volumes:
+       - ./pgdata:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_USER=postgres'
+      - 'POSTGRES_PASSWORD=password'
+  redis:
+    image: docker.io/bitnami/redis:7.0
+    container_name: 'redis'
+    environment:
+      - REDIS_PASSWORD=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6379:6379'
+    volumes:
+      - './redis_data:/bitnami/redis/data'
+      - ./redis.conf:/opt/bitnami/redis/mounted-etc/redis.conf
+  redis-commander:
+    image: rediscommander/redis-commander
+    container_name: 'redis-commander'
+    environment:
+      - REDIS_HOST=redis-redis-1
+      - REDIS_PASSWORD=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    ports:
+      - "9090:8081"
+    restart: always

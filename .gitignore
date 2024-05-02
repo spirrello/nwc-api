@@ -1,0 +1,4 @@
+/target
+redis_data
+redis.conf
+pgdata

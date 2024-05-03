@@ -1,11 +1,6 @@
 pub mod nwc;
 
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::response::IntoResponse;
 use derive_builder::Builder;
 use serde::Serialize;
 use std::borrow::Cow;

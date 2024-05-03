@@ -24,23 +24,6 @@ pub struct NwcRequest {
     budget: i64,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct NwcResponseErrorMessage {
-    status: String,
-    error: String,
-}
-
-impl fmt::Display for NwcResponseErrorMessage {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{{\"status\": \"{}\",\"error\": \"{}\"}}",
-            self.status, self.error
-        )
-    }
-}
-impl Error for NwcResponseErrorMessage {}
-
 pub async fn create_customer_nwc(
     State(shared_state): State<Arc<AppState>>,
     Json(req): Json<NwcRequest>,

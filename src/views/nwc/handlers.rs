@@ -9,8 +9,6 @@ use axum::{
     Json,
 };
 use serde_derive::{Deserialize, Serialize};
-use std::error::Error;
-use std::fmt;
 use std::sync::Arc;
 use tracing::{error, info};
 // use uuid::Uuid;

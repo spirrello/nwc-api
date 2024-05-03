@@ -15,6 +15,8 @@ use std::sync::Arc;
 use tracing::{error, info};
 // use uuid::Uuid;
 
+use crate::views::{into_axum_error_response, into_axum_success_response};
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct NwcRequest {
     uuid: String,
@@ -74,32 +76,27 @@ pub async fn create_customer_nwc(
     .fetch_one(&shared_state.db)
     .await {
         Err(e) => {
-            error!("error creating nwc: {}", e);
-            // The return is required otherwise the HTTP response code will be 200
-            let error_message = NwcResponseErrorMessage {
-                status: "failed".to_string(),
-                error: e.to_string(),
-            };
-            return (StatusCode::BAD_REQUEST, axum::response::Json(error_message)).into_response();
+            match e {
+                sqlx::Error::RowNotFound => {
+                    info!("nwc not found: {}", e);
+                    let error_message = "row not found";
+                    return (StatusCode::NOT_FOUND, into_axum_error_response(error_message));
+                },
+                sqlx::Error::Database(err) if err.message().contains("duplicate") => {
+                    error!("duplicate entry: {}", err);
+                    let error_message = "duplicate entry";
+                    return (StatusCode::BAD_REQUEST, into_axum_error_response(error_message));
+                },
+                _ => {
+                    error!("database error: {}", e);
+                    let error_message = "database error";
+                    return (StatusCode::INTERNAL_SERVER_ERROR, into_axum_error_response(error_message));
+                }
+            }
         },
         Ok(_) => {
             info!("CustomerNwc generated successfully");
-            let response = serde_json::json!({
-                "status": "success",
-                "data": serde_json::json!({
-                    "nwc": customer_nwc_response
-                })
-            });
-            return axum::response::Json(response).into_response();
-
-            // waiting to add redis
-            // match redis_conn.set::<String, String, String>(customer.email.clone(), uuid).await {
-            //     Ok(_) => {
-            //         tracing::info!("customer setup successful");
-            //         Ok((successCode::OK, "customer setup successful").into_response())
-            //     }
-            //     Err(e) => Ok((successCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()),
-            // }
+            return (StatusCode::OK, into_axum_success_response(customer_nwc_response));
         },
     };
 }
@@ -118,22 +115,26 @@ pub async fn get_customer_nwc(
     .fetch_one(&shared_state.db)
     .await
     {
-        Err(e) => {
-            info!("customer nwc not found: {}", e);
-            let error_message = NwcResponseErrorMessage {
-                status: "failed".to_string(),
-                error: e.to_string(),
-            };
-            return (StatusCode::NOT_FOUND, axum::response::Json(error_message)).into_response();
-        }
+        Err(e) => match e {
+            sqlx::Error::RowNotFound => {
+                info!("nwc not found: {}", e);
+                let error_message = "row not found";
+                return (
+                    StatusCode::NOT_FOUND,
+                    into_axum_error_response(error_message),
+                );
+            }
+            _ => {
+                error!("database error: {}", e);
+                let error_message = "database error";
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    into_axum_error_response(error_message),
+                );
+            }
+        },
         Ok(nwc) => {
-            let response = serde_json::json!({
-                "status": "success",
-                "data": serde_json::json!({
-                    "nwc": nwc
-                })
-            });
-            return axum::response::Json(response).into_response();
+            return (StatusCode::OK, into_axum_success_response(nwc));
         }
     };
 }

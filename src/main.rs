@@ -13,14 +13,16 @@ use std::sync::Arc;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
+mod cache;
 mod models;
 mod views;
 use crate::views::nwc::handlers::{create_customer_nwc, get_customer_nwc};
+use cache::*;
 
 #[derive(Clone)]
 pub struct AppState {
     db: Pool<Postgres>,
-    // cache: RedisPool,
+    cache: RedisPool,
 }
 
 #[tokio::main]
@@ -30,9 +32,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .compact()
         .init();
 
-    init_env();
+    // init_env();
 
-    dotenv::dotenv().ok();
+    // dotenv::dotenv().ok();
 
     let _nostr_relay = std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY not set");
 
@@ -40,9 +42,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
+    let redis_pool = tokio::task::spawn_blocking(create_redis_pool)
+        .await
+        .unwrap();
     let state = AppState {
         db: pool,
-        // cache: redis_pool,
+        cache: redis_pool,
     };
     let shared_state = Arc::new(state);
 
@@ -68,18 +73,18 @@ async fn health() -> Json<Value> {
     Json(json!({ "health": "ok" }))
 }
 
-fn init_env() {
-    let database_url = "DATABASE_URL=";
-    let database_url_environment = std::env::var("DATABASE_URL").expect("DATABASE_URL not set.");
-    let database_url_environment = format!(
-        "{}{}\nSQLX_OFFLINE=true",
-        database_url, database_url_environment
-    );
+// fn init_env() {
+//     let database_url = "DATABASE_URL=";
+//     let database_url_environment = std::env::var("DATABASE_URL").expect("DATABASE_URL not set.");
+//     let database_url_environment = format!(
+//         "{}{}\nSQLX_OFFLINE=true",
+//         database_url, database_url_environment
+//     );
 
-    let mut data_file = File::create(".env").expect("creation failed");
-    data_file
-        .write_all(database_url_environment.as_bytes())
-        .expect("write failed");
+//     let mut data_file = File::create(".env").expect("creation failed");
+//     data_file
+//         .write_all(database_url_environment.as_bytes())
+//         .expect("write failed");
 
-    println!("Created a file .env");
-}
+//     println!("Created a file .env");
+// }

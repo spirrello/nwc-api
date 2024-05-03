@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * from customer_nwc where uuid = $1",
+  "query": "SELECT * FROM customer_nwc WHERE uuid = $1",
   "describe": {
     "columns": [
       {
@@ -54,5 +54,5 @@
       false
     ]
   },
-  "hash": "de50979a849859cbb6cf555e22c59a64bfe025ebf52d029c40efdbd49d601e8e"
+  "hash": "7274e1af66f4ceb20ff0ce1a27775d8680f9e624462b9e120465df01364a52fb"
 }

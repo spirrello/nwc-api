@@ -14,7 +14,7 @@ use tracing::Level;
 mod cache;
 mod models;
 mod views;
-use crate::views::nwc::handlers::{create_customer_nwc, get_customer_nwc};
+use crate::views::nwc::handlers::*;
 use cache::*;
 
 #[derive(Clone)]
@@ -48,7 +48,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         .route("/health", get(health))
         .route("/nwc", post(create_customer_nwc))
-        .route("/nwc/:id", get(get_customer_nwc))
+        .route(
+            "/nwc/:id",
+            get(get_customer_nwc)
+                .delete(delete_customer_nwc)
+                .post(update_customer_nwc),
+        )
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))

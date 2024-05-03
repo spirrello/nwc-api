@@ -134,7 +134,7 @@ pub async fn update_customer_nwc(
     let uuid = req.uuid.clone().unwrap();
 
     let query = format!("UPDATE customer_nwc SET server_key = '{customer_nwc_server_key}', user_key = '{customer_nwc_user_key}', uri = '{customer_nwc_uri}', app_service = '{app_service}', budget = '{budget}' WHERE uuid = '{uuid}'");
-    match sqlx::query(&query).execute(&shared_state.db).await {
+    match sqlx::query(&query).fetch_one(&shared_state.db).await {
         Err(e) => match e {
             sqlx::Error::RowNotFound => {
                 info!("nwc not found: {}", e);

@@ -54,7 +54,7 @@ pub async fn create_customer_nwc(
         req.app_service.clone(),
         req.budget
     )
-    .fetch_one(&shared_state.db)
+    .fetch_all(&shared_state.db)
     .await {
         Err(e) => {
             match e {
@@ -77,7 +77,8 @@ pub async fn create_customer_nwc(
         },
         Ok(_) => {
             info!("CustomerNwc generated successfully");
-            return (StatusCode::OK, into_axum_success_response(customer_nwc_response));
+            let data_vec = vec![customer_nwc_response];
+            return (StatusCode::OK, into_axum_success_response(data_vec));
         },
     };
 }
@@ -115,7 +116,8 @@ pub async fn get_customer_nwc(
             }
         },
         Ok(nwc) => {
-            return (StatusCode::OK, into_axum_success_response(nwc));
+            let data_vec = vec![nwc];
+            return (StatusCode::OK, into_axum_success_response(data_vec));
         }
     };
 }
@@ -154,7 +156,8 @@ pub async fn update_customer_nwc(
             }
         },
         Ok(_) => {
-            return (StatusCode::ACCEPTED, into_axum_success_response(req));
+            let data_vec = vec![req];
+            return (StatusCode::ACCEPTED, into_axum_success_response(data_vec));
         }
     };
 }
@@ -192,8 +195,9 @@ pub async fn delete_customer_nwc(
             }
         },
         Ok(_) => {
-            let data = "";
-            return (StatusCode::OK, into_axum_success_response(data));
+            let data_vec = vec![""];
+
+            return (StatusCode::OK, into_axum_success_response(data_vec));
         }
     };
 }

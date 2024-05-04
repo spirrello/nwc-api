@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .compact()
         .init();
 
-    let _nostr_relay = std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY not set");
+    // let _nostr_relay = std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY not set");
 
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set.");
     let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
@@ -61,8 +61,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .with_state(shared_state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
-    println!("Running on http://localhost:8080");
+    let port = std::env::var("PORT").unwrap_or("9090".to_string());
+    let address = format!("localhost:{}", port);
+    let listener = tokio::net::TcpListener::bind(&address).await.unwrap();
+    println!("Running on {}", address);
     axum::serve(listener, app).await.unwrap();
 
     Ok(())

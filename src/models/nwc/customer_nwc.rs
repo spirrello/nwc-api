@@ -23,7 +23,7 @@ pub struct CustomerNwcResponse {
 
 impl CustomerNwcResponse {
     pub fn generate() -> Self {
-        let nostr_relay = std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY not set");
+        let nostr_relay = std::env::var("NOSTR_RELAY").unwrap_or("ws://localhost:8080".to_string());
         let server_key = Keys::generate();
         let user_key = Keys::generate();
         let user_secret_key = **user_key.secret_key().unwrap();

@@ -23,6 +23,9 @@ sqlx = { version = "0.7.4",features = ["postgres", "runtime-tokio-rustls", "chro
 dotenv = "0.15.0"
 deadpool-redis = "0.15.0"
 derive_builder = "0.20.0"
+    refinery = { version = "0.8.14", features = ["tokio-postgres"]}
+tokio-postgres = "0.7.10"
+deadpool-postgres = "0.13.1"
 
 [lints.clippy]
 needless_return = "allow"

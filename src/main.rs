@@ -9,14 +9,15 @@ use sqlx::Postgres;
 use std::error::Error;
 use std::sync::Arc;
 use tower_http::trace::{self, TraceLayer};
-use tracing::info;
 use tracing::Level;
 
 mod cache;
+mod init_db;
 mod models;
 mod views;
 use crate::views::nwc::handlers::*;
 use cache::*;
+use init_db::*;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -31,11 +32,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .compact()
         .init();
 
-    init_env();
+    run_migrations().await;
 
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set.");
     let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
-    sqlx::migrate!("./migrations").run(&pool).await?;
 
     let redis_pool = tokio::task::spawn_blocking(create_redis_pool)
         .await
@@ -72,11 +72,11 @@ async fn health() -> Json<Value> {
     Json(json!({ "health": "ok" }))
 }
 
-fn init_env() {
-    for (key, value) in std::env::vars() {
-        println!("{}: {}", key, value);
-    }
-    std::env::var("DATABASE_URL").expect("DATABASE_URL is not set.");
-    std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY is not set.");
-    std::env::var("REDIS_URL").expect("REDIS_URL not set.");
-}
+// fn init_env() {
+//     for (key, value) in std::env::vars() {
+//         println!("{}: {}", key, value);
+//     }
+//     std::env::var("DATABASE_URL").expect("DATABASE_URL is not set.");
+//     std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY is not set.");
+//     std::env::var("REDIS_URL").expect("REDIS_URL not set.");
+// }

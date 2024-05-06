@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM customer_nwc WHERE uuid = $1 AND app_service = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "03c8c391dd5e9cd9291e7463e59d7d565591e8f62722700b920a124f8dda7526"
+}

@@ -3,7 +3,7 @@ use crate::{
     AppState,
 };
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -16,15 +16,21 @@ use tracing::{error, info};
 use crate::views::{into_axum_error_response, into_axum_success_response};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct NwcRequest {
+pub struct NewNwcRequest {
     uuid: String,
     app_service: String,
     budget: i64,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize, Default)]
+pub struct DeleteNwcRequest {
+    uuid: String,
+    app_service: String,
+}
+
 pub async fn create_customer_nwc(
     State(shared_state): State<Arc<AppState>>,
-    Json(req): Json<NwcRequest>,
+    Json(req): Json<NewNwcRequest>,
 ) -> impl IntoResponse {
     info!(
         "create_customer_nwc: {:?}",
@@ -164,14 +170,13 @@ pub async fn update_customer_nwc(
 
 pub async fn delete_customer_nwc(
     State(shared_state): State<Arc<AppState>>,
-    Path(uuid): Path<String>,
+    Path((uuid, app_service)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    info!("deleting {}", uuid);
-
     match sqlx::query_as!(
         CustomerNwc,
-        "DELETE FROM customer_nwc WHERE uuid = $1",
-        uuid
+        "DELETE FROM customer_nwc WHERE uuid = $1 AND app_service = $2",
+        uuid,
+        app_service
     )
     .execute(&shared_state.db)
     .await

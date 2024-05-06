@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use nostr_sdk::prelude::*;
@@ -48,12 +48,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         .route("/health", get(health))
         .route("/nwc", post(create_customer_nwc))
-        .route(
-            "/nwc/:id",
-            get(get_customer_nwc)
-                .delete(delete_customer_nwc)
-                .post(update_customer_nwc),
-        )
+        .route("/nwc/:id", get(get_customer_nwc).post(update_customer_nwc))
+        .route("/nwc/:uuid/:app_service", delete(delete_customer_nwc))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))

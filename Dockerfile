@@ -1,5 +1,5 @@
 # builder
-ARG RUST_VERSION=1.74.0
+ARG RUST_VERSION=1.75.0
 
 FROM rust:${RUST_VERSION}-buster AS builder
 
@@ -21,6 +21,8 @@ RUN mv /usr/src/app/target/release/nwc-api . && \
 
 RUN apt update && apt install wget -y && \
     apt-get -s dist-upgrade | grep "^Inst" | grep -i securi | awk -F " " {'print $2'} | xargs apt-get install
+
+RUN cargo install sqlx-cli
 
 COPY entrypoint.sh entrypoint.sh
 RUN chmod +x entrypoint.sh

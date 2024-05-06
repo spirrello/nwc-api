@@ -3,7 +3,7 @@ use crate::{
     AppState,
 };
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,

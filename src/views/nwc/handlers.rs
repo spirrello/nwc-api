@@ -100,7 +100,7 @@ pub async fn get_customer_nwc(
         "SELECT * FROM customer_nwc WHERE uuid = $1",
         uuid
     )
-    .fetch_one(&shared_state.db)
+    .fetch_all(&shared_state.db)
     .await
     {
         Err(e) => match e {

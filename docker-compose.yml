@@ -3,6 +3,8 @@ services:
   postgres:
     container_name: 'postgres'
     image: 'postgres:15.2'
+    networks:
+      - nwc
     ports:
       - '5433:5432'
     logging:
@@ -20,6 +22,8 @@ services:
     environment:
       - REDIS_PASSWORD=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    networks:
+      - nwc
     ports:
       - '6379:6379'
     volumes:
@@ -31,6 +35,11 @@ services:
     environment:
       - REDIS_HOST=redis-redis-1
       - REDIS_PASSWORD=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    networks:
+      - nwc
     ports:
-      - "9090:8081"
+      - "9091:8081"
     restart: always
+
+networks:
+  nwc:

@@ -10,4 +10,4 @@ CREATE TABLE customer_nwc (
 );
 
 ALTER TABLE customer_nwc
-ADD UNIQUE (uuid, app_service);
+ADD CONSTRAINT unique_uuid_app_service_constraint UNIQUE (uuid, app_service);

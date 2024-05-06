@@ -8,10 +8,10 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use deadpool_redis::redis::AsyncCommands;
 use serde_derive::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{error, info};
-// use uuid::Uuid;
 
 use crate::views::{into_axum_error_response, into_axum_success_response};
 
@@ -60,7 +60,7 @@ pub async fn create_customer_nwc(
         req.app_service.clone(),
         req.budget
     )
-    .fetch_all(&shared_state.db)
+    .fetch_one(&shared_state.db)
     .await {
         Err(e) => {
             match e {
@@ -81,8 +81,20 @@ pub async fn create_customer_nwc(
                 }
             }
         },
-        Ok(_) => {
+        Ok(customer_nwc) => {
             info!("CustomerNwc generated successfully");
+
+            let mut redis_conn = shared_state.cache.get().await.unwrap();
+            let app_service = customer_nwc.app_service.clone().replace(' ', "_");
+            let customer_nwc_json = serde_json::to_string(&customer_nwc).unwrap();
+            let key = format!("{}:{}", req.uuid.clone(), app_service);
+            match redis_conn.set::<String, String, String>(key, customer_nwc_json).await {
+                Ok(_) => {
+                    info!("customer setup successful");
+                }
+                Err(e) =>  error!("errort inserting into redis: {}", e),
+            }
+
             let data_vec = vec![customer_nwc_response];
             return (StatusCode::OK, into_axum_success_response(data_vec));
         },

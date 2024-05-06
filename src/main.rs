@@ -9,6 +9,7 @@ use sqlx::Postgres;
 use std::error::Error;
 use std::sync::Arc;
 use tower_http::trace::{self, TraceLayer};
+use tracing::info;
 use tracing::Level;
 
 mod cache;
@@ -30,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .compact()
         .init();
 
-    // let _nostr_relay = std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY not set");
+    init_env();
 
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set.");
     let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
@@ -58,7 +59,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_state(shared_state);
 
     let port = std::env::var("PORT").unwrap_or("9090".to_string());
-    let address = format!("localhost:{}", port);
+    let host = std::env::var("HOST").unwrap_or("0.0.0.0".to_string());
+    let address = format!("{}:{}", host, port);
     let listener = tokio::net::TcpListener::bind(&address).await.unwrap();
     println!("Running on {}", address);
     axum::serve(listener, app).await.unwrap();
@@ -68,4 +70,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 async fn health() -> Json<Value> {
     Json(json!({ "health": "ok" }))
+}
+
+fn init_env() {
+    for (key, value) in std::env::vars() {
+        println!("{}: {}", key, value);
+    }
+    std::env::var("DATABASE_URL").expect("DATABASE_URL is not set.");
+    std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY is not set.");
+    std::env::var("REDIS_URL").expect("REDIS_URL not set.");
 }

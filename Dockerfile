@@ -12,7 +12,7 @@ COPY build.rs /usr/src/app/build.rs
 COPY Cargo.toml /usr/src/app/Cargo.toml
 
 
-RUN cargo build --release
+RUN SQLX_OFFLINE=true cargo build --release
 
 
 RUN mv /usr/src/app/target/release/nwc-api . && \

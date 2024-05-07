@@ -9,6 +9,7 @@ use sqlx::Postgres;
 use std::error::Error;
 use std::sync::Arc;
 use tower_http::trace::{self, TraceLayer};
+use tracing::info;
 use tracing::Level;
 
 mod cache;
@@ -40,6 +41,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let redis_pool = tokio::task::spawn_blocking(create_redis_pool)
         .await
         .unwrap();
+
+    // Try to get a connection from the pool
+    match redis_pool.get().await {
+        Ok(_conn) => info!("Redis pool is valid."),
+        Err(e) => panic!("Failed to get connection from Redis pool: {}", e),
+    }
+
     let state = AppState {
         db: pool,
         cache: redis_pool,
@@ -71,12 +79,3 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn health() -> Json<Value> {
     Json(json!({ "health": "ok" }))
 }
-
-// fn init_env() {
-//     for (key, value) in std::env::vars() {
-//         println!("{}: {}", key, value);
-//     }
-//     std::env::var("DATABASE_URL").expect("DATABASE_URL is not set.");
-//     std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY is not set.");
-//     std::env::var("REDIS_URL").expect("REDIS_URL not set.");
-// }

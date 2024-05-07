@@ -92,7 +92,11 @@ pub async fn create_customer_nwc(
                 Ok(_) => {
                     info!("customer setup successful");
                 }
-                Err(e) =>  error!("errort inserting into redis: {}", e),
+                Err(e) =>  {
+                    let error_message = "error inserting nwc into redis";
+                    error!("{}: {}", error_message, e);
+                    return (StatusCode::INTERNAL_SERVER_ERROR, into_axum_error_response(error_message));}
+                ,
             }
 
             let data_vec = vec![customer_nwc_response];

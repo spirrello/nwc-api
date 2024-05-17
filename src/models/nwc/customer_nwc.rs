@@ -18,11 +18,12 @@ pub struct CustomerNwc {
 /// CustomerNwcCache is used to store CustomerNwc in cache
 #[derive(FromRedisValue, ToRedisArgs, Debug, Clone, Serialize, Deserialize)]
 pub struct CustomerNwcCache {
-    pub server_key: String,
-    pub user_key: String,
-    pub uri: String,
-    pub app_service: String,
-    pub budget: i64,
+    pub data: Vec<CustomerNwc>,
+    // pub server_key: String,
+    // pub user_key: String,
+    // pub uri: String,
+    // pub app_service: String,
+    // pub budget: i64,
 }
 
 /// CustomerNwcResponse is used to return newly created NWC URIs.

@@ -1,6 +1,7 @@
 use bitcoin::secp256k1::SecretKey;
 use nostr::Keys;
 use nostr_sdk::prelude::*;
+use redis_macros::{FromRedisValue, ToRedisArgs};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(sqlx::FromRow, Debug, Clone, Serialize, Deserialize)]
@@ -14,6 +15,17 @@ pub struct CustomerNwc {
     pub budget: i64,
 }
 
+/// CustomerNwcCache is used to store CustomerNwc in cache
+#[derive(FromRedisValue, ToRedisArgs, Debug, Clone, Serialize, Deserialize)]
+pub struct CustomerNwcCache {
+    pub server_key: String,
+    pub user_key: String,
+    pub uri: String,
+    pub app_service: String,
+    pub budget: i64,
+}
+
+/// CustomerNwcResponse is used to return newly created NWC URIs.
 #[derive(Debug, Clone, Serialize)]
 pub struct CustomerNwcResponse {
     pub server_key: SecretKey,

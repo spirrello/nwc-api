@@ -15,10 +15,12 @@ use tracing::Level;
 mod cache;
 mod init_db;
 mod models;
+mod settings;
 mod views;
 use crate::views::nwc::handlers::*;
 use cache::*;
 use init_db::*;
+use settings::*;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -33,12 +35,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .compact()
         .init();
 
-    run_migrations().await;
-
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set.");
-    let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
-
-    let redis_pool = tokio::task::spawn_blocking(create_redis_pool)
+    let service_config = ServiceConfig::new();
+    run_migrations(&service_config).await;
+    let pool = sqlx::postgres::PgPool::connect(&service_config.db_url).await?;
+    let redis_url = service_config.redis_url.clone();
+    let redis_pool = tokio::task::spawn_blocking(move || create_redis_pool(redis_url))
         .await
         .unwrap();
 

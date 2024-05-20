@@ -124,7 +124,7 @@ pub async fn create_customer_nwc(
     };
 }
 
-pub async fn get_customer_nwc_from_cache(
+pub async fn get_customer_nwc(
     State(shared_state): State<Arc<AppState>>,
     Path(uuid): Path<String>,
 ) -> impl IntoResponse {
@@ -176,45 +176,6 @@ pub async fn get_customer_nwc_from_cache(
             };
         }
     }
-}
-
-pub async fn get_customer_nwc(
-    State(shared_state): State<Arc<AppState>>,
-    Path(uuid): Path<String>,
-) -> impl IntoResponse {
-    info!("searching for {}", uuid);
-
-    match sqlx::query_as!(
-        CustomerNwc,
-        "SELECT * FROM customer_nwc WHERE uuid = $1",
-        uuid
-    )
-    .fetch_all(&shared_state.db)
-    .await
-    {
-        Err(e) => match e {
-            sqlx::Error::RowNotFound => {
-                info!("nwc not found: {}", e);
-                let error_message = "nwc not found";
-                return (
-                    StatusCode::NOT_FOUND,
-                    into_axum_error_response(error_message),
-                );
-            }
-            _ => {
-                error!("database error: {}", e);
-                let error_message = "database error";
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    into_axum_error_response(error_message),
-                );
-            }
-        },
-        Ok(nwc) => {
-            let data_vec = vec![nwc];
-            return (StatusCode::OK, into_axum_success_response(data_vec));
-        }
-    };
 }
 
 pub async fn update_customer_nwc(

@@ -1,7 +1,6 @@
-use crate::models::nwc::customer_nwc;
 use crate::views::{into_axum_error_response, into_axum_success_response};
 use crate::{
-    models::nwc::customer_nwc::{CustomerNwc, CustomerNwcCache, CustomerNwcResponse},
+    models::nwc::customer_nwc::{CustomerNwc, CustomerNwcCache, NewCustomerNwcResponse},
     AppState,
 };
 use axum::{
@@ -36,7 +35,7 @@ pub async fn create_customer_nwc(
         "create_customer_nwc: {:?}",
         serde_json::to_string(&req).unwrap()
     );
-    let customer_nwc_response = CustomerNwcResponse::generate();
+    let customer_nwc_response = NewCustomerNwcResponse::generate();
 
     let customer_nwc_response_uri = customer_nwc_response.uri.clone().to_string();
     let customer_nwc_response_server_key: String = customer_nwc_response
@@ -85,33 +84,9 @@ pub async fn create_customer_nwc(
             let mut redis_conn = shared_state.cache.get().await.unwrap();
             let redis_key = format!("{}:nwc", customer_nwc.uuid.clone().unwrap());
 
-            // let customer_nwc_cache = CustomerNwcCache {
-            //     server_key: customer_nwc.server_key,
-            //     user_key: customer_nwc.user_key,
-            //     uri: customer_nwc.uri,
-            //     app_service: customer_nwc.app_service,
-            //     budget: customer_nwc.budget,
-            // };
-            // let customer_nwc_cache = serde_json::to_string(&customer_nwc_cache).unwrap();
-
-
-
-
-            // match redis_conn.set::<_, _, String>(redis_key, &customer_nwc_cache).await {
-            //     Ok(customer_nwc_cache) => {
-            //             info!("customer_nwc_cache added successfully: {}", customer_nwc_cache);
-            //     },
-            //     Err(e) =>  {
-            //         let error_message = "error inserting nwc into redis";
-            //         error!("{}: {}", error_message, e);
-            //         return (StatusCode::INTERNAL_SERVER_ERROR, into_axum_error_response(error_message));
-            //     }
-
-            //     }
-
             match redis_conn.get::<_, String>(redis_key.clone()).await {
                 Ok(customer_nwc_cache) => {
-                        // info!("customer_nwc_cache added successfully: {}", customer_nwc_cache);
+
                         let mut customer_nwc_cache: CustomerNwcCache = serde_json::from_str(&customer_nwc_cache).unwrap();
                         customer_nwc_cache.data.push(customer_nwc);
                         let customer_nwc_cache = serde_json::to_string(&customer_nwc_cache).unwrap();
@@ -124,7 +99,7 @@ pub async fn create_customer_nwc(
                             }
                         }
                 },
-                Err(e) =>  {
+                Err(_e) =>  {
 
                     let customer_nwc_cache = CustomerNwcCache {
                         data: vec![customer_nwc]
@@ -132,17 +107,13 @@ pub async fn create_customer_nwc(
 
                     let customer_nwc_cache = serde_json::to_string(&customer_nwc_cache).unwrap();
                     match redis_conn.set::<_, _, String>(redis_key, customer_nwc_cache).await {
-                        Ok(s) => info!("customer inserted to redis successfully: {}", s),
+                        Ok(s) => info!("customer nwc created successfully: {}", s),
                         Err(e) => {
                             let error_message = "error inserting nwc into redis";
                             error!("{}: {}", error_message, e);
                             return (StatusCode::INTERNAL_SERVER_ERROR, into_axum_error_response(error_message));
                         }
                     }
-
-                    // let error_message = "error inserting nwc into redis";
-                    // error!("{}: {}", error_message, e);
-                    // return (StatusCode::INTERNAL_SERVER_ERROR, into_axum_error_response(error_message));
                 }
 
                 }
@@ -153,43 +124,58 @@ pub async fn create_customer_nwc(
     };
 }
 
-pub async fn get_customer_nwc_with_cache(
+pub async fn get_customer_nwc_from_cache(
     State(shared_state): State<Arc<AppState>>,
     Path(uuid): Path<String>,
 ) -> impl IntoResponse {
     info!("searching for {}", uuid);
 
-    match sqlx::query_as!(
-        CustomerNwc,
-        "SELECT * FROM customer_nwc WHERE uuid = $1",
-        uuid
-    )
-    .fetch_all(&shared_state.db)
-    .await
-    {
-        Err(e) => match e {
-            sqlx::Error::RowNotFound => {
-                info!("nwc not found: {}", e);
-                let error_message = "nwc not found";
-                return (
-                    StatusCode::NOT_FOUND,
-                    into_axum_error_response(error_message),
-                );
-            }
-            _ => {
-                error!("database error: {}", e);
-                let error_message = "database error";
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    into_axum_error_response(error_message),
-                );
-            }
-        },
-        Ok(nwc) => {
-            let data_vec = vec![nwc];
-            return (StatusCode::OK, into_axum_success_response(data_vec));
+    let mut redis_conn = shared_state.cache.get().await.unwrap();
+    let redis_key = format!("{}:nwc", uuid);
+
+    match redis_conn.get::<_, String>(redis_key.clone()).await {
+        Ok(customer_nwc_cache) => {
+            let customer_nwc_cache: CustomerNwcCache =
+                serde_json::from_str(&customer_nwc_cache).unwrap();
+            return (
+                StatusCode::OK,
+                into_axum_success_response(customer_nwc_cache.data),
+            );
         }
-    };
+        Err(_e) => {
+            info!("nwc not found in cache, looking in db");
+            match sqlx::query_as!(
+                CustomerNwc,
+                "SELECT * FROM customer_nwc WHERE uuid = $1",
+                uuid
+            )
+            .fetch_all(&shared_state.db)
+            .await
+            {
+                Err(e) => match e {
+                    _ => {
+                        error!("database error: {}", e);
+                        let error_message = "database error";
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            into_axum_error_response(error_message),
+                        );
+                    }
+                },
+                Ok(nwc) => {
+                    if nwc.is_empty() {
+                        let error_message = "nwc not found";
+                        return (
+                            StatusCode::NOT_FOUND,
+                            into_axum_error_response(error_message),
+                        );
+                    }
+                    let data_vec = vec![nwc];
+                    return (StatusCode::OK, into_axum_success_response(data_vec));
+                }
+            };
+        }
+    }
 }
 
 pub async fn get_customer_nwc(

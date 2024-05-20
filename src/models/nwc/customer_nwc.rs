@@ -28,13 +28,13 @@ pub struct CustomerNwcCache {
 
 /// CustomerNwcResponse is used to return newly created NWC URIs.
 #[derive(Debug, Clone, Serialize)]
-pub struct CustomerNwcResponse {
+pub struct NewCustomerNwcResponse {
     pub server_key: SecretKey,
     pub user_key: SecretKey,
     pub uri: NostrWalletConnectURI,
 }
 
-impl CustomerNwcResponse {
+impl NewCustomerNwcResponse {
     pub fn generate() -> Self {
         let nostr_relay = std::env::var("NOSTR_RELAY").expect("NOSTR_RELAY is not set");
         let server_key = Keys::generate();
@@ -48,7 +48,7 @@ impl CustomerNwcResponse {
             None,
         );
 
-        CustomerNwcResponse {
+        NewCustomerNwcResponse {
             server_key: **server_key.secret_key().unwrap(),
             user_key: **user_key.secret_key().unwrap(),
             uri: nwc_uri,
